@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lilla Sätras Multiplikationsträning - Inloggning</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #ffecd2;
+        }
+        .container {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+            max-width: 300px;
+            width: 80%;
+        }
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        input, select, button {
+            padding: 10px;
+            font-size: 1em;
+            margin: 10px 0;
+            width: 100%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            color: #fff;
+            background-color: #4CAF50;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Logga in</h1>
+    <input type="text" id="username" placeholder="Skriv ditt namn">
+    <select id="class">
+        <option value="" disabled selected>Välj din klass</option>
+        <option value="3A">3A</option>
+        <option value="3B">3B</option>
+        <option value="3C">3C</option>
+        <option value="3D">3D</option>
+        <option value="3E">3E</option>
+    </select>
+    <button onclick="login()">Logga in</button>
+</div>
+
+<script>
+    function login() {
+        const username = document.getElementById("username").value;
+        const userClass = document.getElementById("class").value;
+
+        if (username && userClass) {
+            // Spara namn och klass i Local Storage
+            localStorage.setItem("username", username);
+            localStorage.setItem("userClass", userClass);
+
+            // Navigera till multiplikationssidan
+            window.location.href = "multiplication.html";
+        } else {
+            alert("Vänligen fyll i både namn och klass.");
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lilla Sätras Multiplikationsträning</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            margin: 0;
+            background-color: #ffecd2;
+            color: #333;
+        }
+        .container {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+            max-width: 300px;
+            width: 80%;
+            margin-top: 20px;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        #question {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #ff5722;
+        }
+        #answer {
+            width: 80%;
+            padding: 10px;
+            font-size: 1em;
+            margin-bottom: 15px;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #fff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        #statistics {
+            margin-top: 20px;
+            text-align: left;
+            max-width: 300px;
+            width: 80%;
+        }
+        #statistics h2 {
+            font-size: 1.2em;
+            color: #333;
+        }
+        #worldMap {
+            width: 80%;
+            max-width: 800px;
+            height: 400px;
+            margin: 20px auto;
+        }
+    </style>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+
+<div class="container">
+    <h1 id="welcome">Välkommen!</h1>
+    <p id="question">...</p>
+    <input type="number" id="answer" placeholder="Ditt svar">
+    <button id="submitBtn" onclick="checkAnswer()">Skicka svar</button>
+    <p class="feedback" id="feedback"></p>
+    <button onclick="generateQuestion()">Nästa fråga</button>
+</div>
+
+<div id="statistics">
+    <h2>Statistik</h2>
+</div>
+
+<!-- Karta längst ner -->
+<div id="worldMap"></div>
+
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyVX9AfDdWwTqODdWTpuGkunJdaVNVcjNva-i1PkN9v-hqVf4Z5GTvm49JK47ZO3ndauA/exec';
+    const username = localStorage.getItem("username");
+    const userClass = localStorage.getItem("userClass");
+    document.getElementById("welcome").innerText = `Välkommen, ${username} från ${userClass}!`;
+
+    let correctAnswer;
+
+    function generateQuestion() {
+        const num1 = Math.floor(Math.random() * 10) + 1;
+        const num2 = Math.floor(Math.random() * 10) + 1;
+        correctAnswer = num1 * num2;
+        document.getElementById("question").innerText = `Vad är ${num1} x ${num2}?`;
+        document.getElementById("answer").value = "";
+        document.getElementById("feedback").innerText = "";
+        document.getElementById("submitBtn").disabled = false;
+    }
+
+    function checkAnswer() {
+        const userAnswer = parseInt(document.getElementById("answer").value);
+        const isCorrect = userAnswer === correctAnswer;
+
+        if (isCorrect) {
+            document.getElementById("feedback").innerText = "Rätt svar! Bra jobbat!";
+        } else {
+            document.getElementById("feedback").innerText = `Fel svar. Rätt svar är ${correctAnswer}. Försök igen!`;
+            document.getElementById("submitBtn").disabled = true;
+        }
+
+        updateAnswerCount(isCorrect);
+    }
+
+    function updateAnswerCount(isCorrect) {
+        fetch(`${scriptURL}?username=${username}&userClass=${userClass}&isCorrect=${isCorrect}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    fetchStatistics();
+                }
+            })
+            .catch(error => console.error('Fel vid uppdatering av svar:', error));
+    }
+
+    function fetchStatistics() {
+        fetch(`${scriptURL}?action=getStatistics`)
+            .then(response => response.json())
+            .then(data => {
+                const statistics = document.getElementById("statistics");
+                statistics.innerHTML = "<h2>Statistik</h2>";
+                const totalElement = document.createElement("p");
+                totalElement.textContent = `Totalt antal rätta svar: ${data.totaltAntalRattSvar}`;
+                statistics.appendChild(totalElement);
+
+                data.topplista.forEach(([klass, antalRattSvar]) => {
+                    const klassElement = document.createElement("p");
+                    klassElement.textContent = `Klass ${klass}: ${antalRattSvar} rätta svar`;
+                    statistics.appendChild(klassElement);
+                });
+
+                updateMapProgress(data.topplista.map(([klass, antalRattSvar]) => ({ className: klass, steps: antalRattSvar })));
+            })
+            .catch(error => console.error('Fel vid hämtning av statistik:', error));
+    }
+
+    function initMap() {
+        const map = L.map('worldMap').setView([60.6749, 17.1413], 2); // Gävle-koordinater
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+        }).addTo(map);
+
+        // Basruta (Gävle) för varje klass
+        const baseRoute = [
+            [60.6749, 17.1413], [52.52, 13.4050], [48.8566, 2.3522], 
+            [40.7128, -74.0060], [34.0522, -118.2437], 
+            [35.6895, 139.6917], [31.2304, 121.4737], 
+            [28.6139, 77.2090], [55.7558, 37.6173], 
+            [60.6749, 17.1413] 
+        ];
+
+        // Funktion för att interpolera en rutt med förskjutning
+        function getOffsetRoute(baseRoute, offset) {
+            return baseRoute.map(([lat, lng]) => [lat + offset.lat, lng + offset.lng]);
+        }
+
+        // Interpolerade rutter med förskjutningar för varje klass
+        const classOffsets = {
+            "3A": {lat: 0.2, lng: 0.2},
+            "3B": {lat: -0.2, lng: 0.2},
+            "3C": {lat: 0.2, lng: -0.2},
+            "3D": {lat: -0.2, lng: -0.2},
+            "3E": {lat: 0, lng: 0} // Ingen förskjutning för 3E
+        };
+
+        const classPaths = {
+            "3A": L.polyline([], {color: 'blue'}).addTo(map),
+            "3B": L.polyline([], {color: 'red'}).addTo(map),
+            "3C": L.polyline([], {color: 'green'}).addTo(map),
+            "3D": L.polyline([], {color: 'orange'}).addTo(map),
+            "3E": L.polyline([], {color: 'purple'}).addTo(map),
+        };
+
+        const interpolatedRoutes = {};
+        for (let [className, offset] of Object.entries(classOffsets)) {
+            interpolatedRoutes[className] = [];
+            const offsetRoute = getOffsetRoute(baseRoute, offset);
+            for (let i = 0; i < offsetRoute.length - 1; i++) {
+                interpolatedRoutes[className].push(...interpolateSteps(offsetRoute[i], offsetRoute[i + 1], 100));
+            }
+        }
+
+        function interpolateSteps(start, end, numSteps) {
+            const latStep = (end[0] - start[0]) / numSteps;
+            const lngStep = (end[1] - start[1]) / numSteps;
+            const steps = [];
+            for (let i = 0; i < numSteps; i++) {
+                steps.push([start[0] + i * latStep, start[1] + i * lngStep]);
+            }
+            return steps;
+        }
+
+        function updateMapProgress(classProgress) {
+            classProgress.forEach(({ className, steps }) => {
+                const path = classPaths[className];
+                const routeSegment = interpolatedRoutes[className].slice(0, Math.min(steps, interpolatedRoutes[className].length));
+                path.setLatLngs(routeSegment);
+
+                if (steps >= interpolatedRoutes[className].length) {
+                    document.getElementById("feedback").innerText = `${className} har nått målet runt jorden!`;
+                }
+            });
+        }
+        return updateMapProgress;
+    }
+
+    const updateMapProgress = initMap();
+
+    generateQuestion();
+    fetchStatistics();
+</script>
+
+</body>
+</html>
