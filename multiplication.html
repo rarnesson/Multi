@@ -112,7 +112,7 @@
         document.getElementById("question").innerText = `Vad är ${num1} x ${num2}?`;
         document.getElementById("answer").value = "";
         document.getElementById("feedback").innerText = "";
-        document.getElementById("submitBtn").disabled = false;
+        document.getElementById("submitBtn").disabled = false; // Återaktivera knappen för nästa fråga
     }
 
     function checkAnswer() {
@@ -123,9 +123,9 @@
             document.getElementById("feedback").innerText = "Rätt svar! Bra jobbat!";
         } else {
             document.getElementById("feedback").innerText = `Fel svar. Rätt svar är ${correctAnswer}. Försök igen!`;
-            document.getElementById("submitBtn").disabled = true;
         }
 
+        document.getElementById("submitBtn").disabled = true; // Inaktivera knappen efter första försöket
         updateAnswerCount(isCorrect);
     }
 
@@ -166,72 +166,7 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
         }).addTo(map);
-
-        // Basruta (Gävle) för varje klass
-        const baseRoute = [
-            [60.6749, 17.1413], [52.52, 13.4050], [48.8566, 2.3522], 
-            [40.7128, -74.0060], [34.0522, -118.2437], 
-            [35.6895, 139.6917], [31.2304, 121.4737], 
-            [28.6139, 77.2090], [55.7558, 37.6173], 
-            [60.6749, 17.1413] 
-        ];
-
-        // Funktion för att interpolera en rutt med förskjutning
-        function getOffsetRoute(baseRoute, offset) {
-            return baseRoute.map(([lat, lng]) => [lat + offset.lat, lng + offset.lng]);
-        }
-
-        // Interpolerade rutter med förskjutningar för varje klass
-        const classOffsets = {
-            "3A": {lat: 0.2, lng: 0.2},
-            "3B": {lat: -0.2, lng: 0.2},
-            "3C": {lat: 0.2, lng: -0.2},
-            "3D": {lat: -0.2, lng: -0.2},
-            "3E": {lat: 0, lng: 0} // Ingen förskjutning för 3E
-        };
-
-        const classPaths = {
-            "3A": L.polyline([], {color: 'blue'}).addTo(map),
-            "3B": L.polyline([], {color: 'red'}).addTo(map),
-            "3C": L.polyline([], {color: 'green'}).addTo(map),
-            "3D": L.polyline([], {color: 'orange'}).addTo(map),
-            "3E": L.polyline([], {color: 'purple'}).addTo(map),
-        };
-
-        const interpolatedRoutes = {};
-        for (let [className, offset] of Object.entries(classOffsets)) {
-            interpolatedRoutes[className] = [];
-            const offsetRoute = getOffsetRoute(baseRoute, offset);
-            for (let i = 0; i < offsetRoute.length - 1; i++) {
-                interpolatedRoutes[className].push(...interpolateSteps(offsetRoute[i], offsetRoute[i + 1], 100));
-            }
-        }
-
-        function interpolateSteps(start, end, numSteps) {
-            const latStep = (end[0] - start[0]) / numSteps;
-            const lngStep = (end[1] - start[1]) / numSteps;
-            const steps = [];
-            for (let i = 0; i < numSteps; i++) {
-                steps.push([start[0] + i * latStep, start[1] + i * lngStep]);
-            }
-            return steps;
-        }
-
-        function updateMapProgress(classProgress) {
-            classProgress.forEach(({ className, steps }) => {
-                const path = classPaths[className];
-                const routeSegment = interpolatedRoutes[className].slice(0, Math.min(steps, interpolatedRoutes[className].length));
-                path.setLatLngs(routeSegment);
-
-                if (steps >= interpolatedRoutes[className].length) {
-                    document.getElementById("feedback").innerText = `${className} har nått målet runt jorden!`;
-                }
-            });
-        }
-        return updateMapProgress;
     }
-
-    const updateMapProgress = initMap();
 
     generateQuestion();
     fetchStatistics();
