@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lilla Sätras Multiplikationsträning - Inloggning</title>
+    <title>Mattematchen - Lilla Sätra</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,12 +21,17 @@
             padding: 20px;
             border-radius: 15px;
             box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
-            max-width: 300px;
-            width: 80%;
+            max-width: 400px;
+            width: 90%;
         }
         h1 {
             color: #4CAF50;
             margin-bottom: 20px;
+        }
+        p {
+            font-size: 1em;
+            color: #333;
+            line-height: 1.5;
         }
         input, select, button {
             padding: 10px;
@@ -50,7 +55,16 @@
 <body>
 
 <div class="container">
-    <h1>Logga in</h1>
+    <h1>Mattematchen - Lilla Sätra</h1>
+    <p>
+        Veckans läxa är att träna och bemästra multiplikationstabellerna. Ju fler tal ni löser, desto bättre går det för er klass i tävlingen.
+    </p>
+    <p>
+        Nu är det sista veckan, och vi är extra glada att kunna välkomna årskurs 4 och årskurs 5 till tävlingen. 💪
+    </p>
+    <p>
+        Kom ihåg: sitt inte för länge i sträck – räkna hellre en kort stund varje dag. Lycka till och kämpa på, vi hejar på er! 🙌
+    </p>
     <input type="text" id="username" placeholder="Skriv ditt namn">
     <select id="class">
         <option value="" disabled selected>Välj din klass</option>
@@ -59,6 +73,13 @@
         <option value="3C">3C</option>
         <option value="3D">3D</option>
         <option value="3E">3E</option>
+        <option value="4A">4A</option>
+        <option value="4B">4B</option>
+        <option value="4C">4C</option>
+        <option value="4D">4D</option>
+        <option value="5A">5A</option>
+        <option value="5B">5B</option>
+        <option value="5C">5C</option>
     </select>
     <button onclick="login()">Logga in</button>
 </div>
