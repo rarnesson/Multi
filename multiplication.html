@@ -61,23 +61,17 @@
         }
         #statistics {
             margin-top: 20px;
-            text-align: left;
-            max-width: 300px;
-            width: 80%;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
         }
-        #statistics h2 {
-            font-size: 1.2em;
-            color: #333;
-        }
-        #worldMap {
-            width: 80%;
-            max-width: 800px;
-            height: 400px;
-            margin: 20px auto;
+        #chart {
+            margin-top: 20px;
+            width: 100%;
+            height: 300px;
         }
     </style>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -91,11 +85,11 @@
 </div>
 
 <div id="statistics">
-    <h2>Statistik</h2>
+    <h2>Topplista</h2>
+    <p id="totalAnswers" style="font-weight: bold; color: #333;">Totalt antal svar: ...</p>
+    <div id="topList"></div>
+    <canvas id="chart"></canvas>
 </div>
-
-<!-- Karta längst ner -->
-<div id="worldMap"></div>
 
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyVX9AfDdWwTqODdWTpuGkunJdaVNVcjNva-i1PkN9v-hqVf4Z5GTvm49JK47ZO3ndauA/exec';
@@ -104,6 +98,7 @@
     document.getElementById("welcome").innerText = `Välkommen, ${username} från ${userClass}!`;
 
     let correctAnswer;
+    let chart;
 
     function generateQuestion() {
         const num1 = Math.floor(Math.random() * 10) + 1;
@@ -144,28 +139,65 @@
         fetch(`${scriptURL}?action=getStatistics`)
             .then(response => response.json())
             .then(data => {
-                const statistics = document.getElementById("statistics");
-                statistics.innerHTML = "<h2>Statistik</h2>";
-                const totalElement = document.createElement("p");
-                totalElement.textContent = `Totalt antal rätta svar: ${data.totaltAntalRattSvar}`;
-                statistics.appendChild(totalElement);
+                const topList = document.getElementById("topList");
+                topList.innerHTML = "";
 
-                data.topplista.forEach(([klass, antalRattSvar]) => {
+                // Summera totalt antal svar
+                const totalAnswers = data.topplista.reduce((sum, klassData) => sum + klassData[1], 0);
+                document.getElementById("totalAnswers").innerText = `Totalt antal svar: ${totalAnswers}`;
+
+                // Sortera topplistan och visa snyggare format
+                const sortedTopList = data.topplista.sort((a, b) => b[1] - a[1]);
+                sortedTopList.forEach(([klass, antalRattSvar], index) => {
                     const klassElement = document.createElement("p");
-                    klassElement.textContent = `Klass ${klass}: ${antalRattSvar} rätta svar`;
-                    statistics.appendChild(klassElement);
+                    klassElement.innerHTML = `<strong>${index + 1}. Klass ${klass}</strong>: ${antalRattSvar} rätta svar`;
+                    topList.appendChild(klassElement);
                 });
 
-                updateMapProgress(data.topplista.map(([klass, antalRattSvar]) => ({ className: klass, steps: antalRattSvar })));
+                updateChart(sortedTopList);
             })
             .catch(error => console.error('Fel vid hämtning av statistik:', error));
     }
 
-    function initMap() {
-        const map = L.map('worldMap').setView([60.6749, 17.1413], 2); // Gävle-koordinater
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-        }).addTo(map);
+    function updateChart(data) {
+        const labels = data.map(item => item[0]);
+        const values = data.map(item => item[1]);
+
+        const maxPoints = Math.max(10000, ...values);
+
+        if (chart) {
+            chart.destroy();
+        }
+
+        const ctx = document.getElementById("chart").getContext("2d");
+        chart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Poäng",
+                    data: values,
+                    backgroundColor: [
+                        "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
+                        "#FF9F40", "#E6E6FA", "#FF4500", "#1E90FF", "#3CB371",
+                        "#FFD700", "#6495ED", "#DC143C"
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: maxPoints
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
     }
 
     generateQuestion();
